@@ -1,7 +1,10 @@
+
 package com.vendortransport.booking.controller;
 
 import com.vendortransport.booking.dto.RegisterRequest;
 import com.vendortransport.booking.dto.RegisterResponse;
+import com.vendortransport.booking.dto.LoginRequest;
+import com.vendortransport.booking.dto.LoginResponse;
 import com.vendortransport.booking.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -29,5 +32,14 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(
+            @Valid @RequestBody LoginRequest request) {
+
+        LoginResponse response = authService.login(request);
+
+        return ResponseEntity.ok(response);
     }
 }
