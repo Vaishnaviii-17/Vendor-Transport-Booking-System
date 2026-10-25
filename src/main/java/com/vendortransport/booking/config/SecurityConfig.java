@@ -71,6 +71,10 @@ public class SecurityConfig {
                 ).permitAll()
 
                 .requestMatchers(
+                    "/",
+                    "/css/**",
+                    "/js/**",
+                    "/favicon.ico",
                     "/api",
                     "/actuator/health",
                     "/error"
