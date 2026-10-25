@@ -82,7 +82,12 @@ public class SecurityConfig {
                     "/api/vehicles",
                     "/api/availability"
                 ).hasRole("CUSTOMER")
-
+                
+                .requestMatchers(
+                HttpMethod.POST,
+                "/api/bookings"
+                ).hasRole("CUSTOMER")
+                
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
