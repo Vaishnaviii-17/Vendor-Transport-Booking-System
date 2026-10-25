@@ -88,6 +88,16 @@ public class SecurityConfig {
                 "/api/bookings"
                 ).hasRole("CUSTOMER")
                 
+                .requestMatchers(
+                    "/api/admin/**"
+                ).hasRole("ADMIN")
+
+                .requestMatchers(
+                HttpMethod.GET,
+                "/api/bookings/my",
+                "/api/bookings/*"
+                ).hasAnyRole("CUSTOMER", "ADMIN")
+                
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
