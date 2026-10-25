@@ -40,31 +40,39 @@ class VendorTransportSeleniumTest {
     private static final Path SCREENSHOT_DIRECTORY =
             Path.of("target", "selenium-screenshots");
 
-    @BeforeEach
-    void setUp() {
 
-        ChromeOptions options = new ChromeOptions();
+@BeforeEach
+void setUp() {
 
-        if (Boolean.parseBoolean(
-                System.getProperty("selenium.headless", "false")
-        )) {
-            options.addArguments("--headless=new");
-        }
+    ChromeOptions options = new ChromeOptions();
 
+    boolean headless = Boolean.parseBoolean(
+            System.getProperty("selenium.headless", "false")
+    ) || "true".equalsIgnoreCase(
+            System.getenv("CI")
+    );
+
+    if (headless) {
         options.addArguments(
-                "--window-size=1440,900",
-                "--disable-notifications"
+                "--headless=new",
+                "--disable-gpu"
         );
-
-        driver = new ChromeDriver(options);
-
-        wait = new WebDriverWait(
-                driver,
-                Duration.ofSeconds(15)
-        );
-
-        driver.get(BASE_URL);
     }
+
+    options.addArguments(
+            "--window-size=1440,900",
+            "--disable-notifications"
+    );
+
+    driver = new ChromeDriver(options);
+
+    wait = new WebDriverWait(
+            driver,
+            Duration.ofSeconds(15)
+    );
+
+    driver.get(BASE_URL);
+}
 
     @AfterEach
     void tearDown(TestInfo testInfo) {
