@@ -1,9 +1,13 @@
+
 ---
-- name: Deploy Vendor Transport Booking System with Ansible
+- name: Deploy Vendor Transport Booking System with rollback
   hosts: local
   gather_facts: false
 
   vars:
+    target_image: "{{ image_name }}:{{ image_tag }}"
+    candidate_test_mode: "{{ force_candidate_test | default(false) | bool }}"
+
     deployment_env:
       DB_URL: "{{ database_url }}"
       DB_USERNAME: "{{ lookup('ansible.builtin.env', 'DB_USERNAME') }}"
@@ -11,7 +15,11 @@
       JWT_SECRET: "{{ lookup('ansible.builtin.env', 'JWT_SECRET') }}"
 
   tasks:
-    - name: Verify required deployment secrets are available
+    # ==========================================
+    # 1. PREFLIGHT VALIDATION
+    # ==========================================
+
+    - name: Verify required deployment secrets
       ansible.builtin.assert:
         that:
           - deployment_env.DB_USERNAME | length > 0
@@ -24,39 +32,368 @@
       ansible.builtin.command: docker info
       changed_when: false
 
-    - name: Verify application image exists
+    - name: Inspect requested Docker image
       ansible.builtin.command:
         argv:
           - docker
           - image
           - inspect
-          - "{{ image_name }}:{{ image_tag }}"
+          - "{{ target_image }}"
+          - --format
+          - "{{ '{{.Id}}' }}"
+      register: requested_image
       changed_when: false
+      failed_when: false
 
-    - name: Deploy application container
-      community.docker.docker_container:
+    - name: Reject deployment if image is unavailable
+      ansible.builtin.assert:
+        that:
+          - requested_image.rc == 0
+        fail_msg: >-
+          Deployment rejected: Docker image {{ target_image }}
+          is unavailable. Existing deployment remains untouched.
+
+    # ==========================================
+    # 2. INSPECT CURRENT DEPLOYMENT
+    # ==========================================
+
+    - name: Inspect current application container
+      community.docker.docker_container_info:
         name: "{{ app_name }}"
-        image: "{{ image_name }}:{{ image_tag }}"
-        state: started
-        restart_policy: unless-stopped
-        published_ports:
-          - "{{ host_port }}:{{ container_port }}"
-        env: "{{ deployment_env }}"
-        comparisons:
-          env: strict
+      register: current_container
       no_log: true
 
-    - name: Wait for application health endpoint
+    - name: Inspect existing backup container
+      community.docker.docker_container_info:
+        name: "{{ backup_container_name }}"
+      register: existing_backup
+      no_log: true
+
+    - name: Reject deployment if an old backup exists
+      ansible.builtin.assert:
+        that:
+          - not existing_backup.exists
+        fail_msg: >-
+          An existing backup container was detected.
+          Inspect and recover it before attempting another deployment.
+
+    - name: Determine whether deployment configuration matches
+      ansible.builtin.set_fact:
+        deployment_matches: >-
+          {{
+            current_container.exists
+            and current_container.container.State.Running
+            and current_container.container.Image == requested_image.stdout
+            and
+            (
+              (
+                deployment_env.DB_URL in
+                (
+                  current_container.container.Config.Env
+                  | select('match', '^DB_URL=')
+                  | map('regex_replace', '^DB_URL=', '')
+                  | list
+                )
+              )
+              and
+              (
+                deployment_env.DB_USERNAME in
+                (
+                  current_container.container.Config.Env
+                  | select('match', '^DB_USERNAME=')
+                  | map('regex_replace', '^DB_USERNAME=', '')
+                  | list
+                )
+              )
+              and
+              (
+                deployment_env.DB_PASSWORD in
+                (
+                  current_container.container.Config.Env
+                  | select('match', '^DB_PASSWORD=')
+                  | map('regex_replace', '^DB_PASSWORD=', '')
+                  | list
+                )
+              )
+              and
+              (
+                deployment_env.JWT_SECRET in
+                (
+                  current_container.container.Config.Env
+                  | select('match', '^JWT_SECRET=')
+                  | map('regex_replace', '^JWT_SECRET=', '')
+                  | list
+                )
+              )
+            )
+            and
+            (
+              current_container.container.HostConfig.PortBindings
+              .get(container_port | string ~ '/tcp', [{}])[0]
+              .get('HostPort', '') == host_port | string
+            )
+          }}
+      when: current_container.exists
+      no_log: true
+
+    - name: Set configuration match to false if no container exists
+      ansible.builtin.set_fact:
+        deployment_matches: false
+      when: not current_container.exists
+
+    - name: Check existing application health
       ansible.builtin.uri:
         url: "{{ health_check_url }}"
         method: GET
-        return_content: true
         status_code: 200
-      register: app_health
-      until: app_health.status == 200 and app_health.json.status == "UP"
-      retries: 36
-      delay: 5
+        return_content: true
+      register: current_health
+      failed_when: false
+      changed_when: false
+      when: deployment_matches | bool
 
-    - name: Display deployment result
+    - name: Decide whether deployment is required
+      ansible.builtin.set_fact:
+        deployment_needed: >-
+          {{
+            (candidate_test_mode | bool)
+            or (simulate_production_failure | default(false) | bool)
+            or not (deployment_matches | bool)
+            or
+            (current_health.json | default({})).get('status', '') != 'UP'
+          }}
+
+    # ==========================================
+    # 3. CANDIDATE DEPLOYMENT AND ROLLBACK
+    # ==========================================
+
+    - name: Candidate validation and protected deployment
+      when: deployment_needed | bool
+      block:
+        - name: Inspect existing candidate container
+          community.docker.docker_container_info:
+            name: "{{ candidate_container_name }}"
+          register: existing_candidate
+          no_log: true
+
+        - name: Reject deployment if candidate container already exists
+          ansible.builtin.assert:
+            that:
+              - not existing_candidate.exists
+            fail_msg: >-
+              A candidate container already exists.
+              Inspect it before running this playbook.
+
+        - name: Start candidate application
+          community.docker.docker_container:
+            name: "{{ candidate_container_name }}"
+            image: "{{ target_image }}"
+            state: started
+            restart_policy: "no"
+            published_ports:
+              - "{{ candidate_host_port }}:{{ container_port }}"
+            env: "{{ deployment_env }}"
+          no_log: true
+
+        - name: Verify candidate application health
+          ansible.builtin.uri:
+            url: "{{ candidate_health_check_url }}"
+            method: GET
+            status_code: 200
+            return_content: true
+          register: candidate_health
+          until: >-
+            candidate_health.status | default(0) == 200
+            and
+            (candidate_health.json | default({})).get('status', '') == 'UP'
+          retries: "{{ health_check_retries | int }}"
+          delay: "{{ health_check_delay | int }}"
+
+        - name: Report successful candidate-only test
+          ansible.builtin.debug:
+            msg: >-
+              Candidate-only test passed.
+              Production container was not modified.
+          when: candidate_test_mode | bool
+
+        # ======================================
+        # 4. PRODUCTION PROMOTION
+        # ======================================
+
+        - name: Promote candidate to production
+          when: not (candidate_test_mode | bool)
+          block:
+            - name: Stop existing production container
+              community.docker.docker_container:
+                name: "{{ app_name }}"
+                state: stopped
+              when: current_container.exists
+
+            - name: Rename existing container to backup
+              ansible.builtin.command:
+                argv:
+                  - docker
+                  - rename
+                  - "{{ app_name }}"
+                  - "{{ backup_container_name }}"
+              when: current_container.exists
+
+            - name: Deploy requested image on production port
+              community.docker.docker_container:
+                name: "{{ app_name }}"
+                image: "{{ target_image }}"
+                state: started
+                restart_policy: unless-stopped
+                published_ports:
+                  - "{{ host_port }}:{{ container_port }}"
+                env: "{{ deployment_env }}"
+                comparisons:
+                  env: strict
+              no_log: true
+
+            - name: Simulate production deployment failure
+              ansible.builtin.fail:
+                msg: >-
+                  TEST ONLY: Simulated production deployment failure.
+                  Automatic rollback should restore the previous container.
+              when: simulate_production_failure | default(false) | bool
+
+            - name: Verify new production deployment health
+              ansible.builtin.uri:
+                url: "{{ health_check_url }}"
+                method: GET
+                status_code: 200
+                return_content: true
+              register: production_health
+              until: >-
+                production_health.status | default(0) == 200
+                and
+                (production_health.json | default({})).get('status', '') == 'UP'
+              retries: "{{ health_check_retries | int }}"
+              delay: "{{ health_check_delay | int }}"
+
+            - name: Remove backup after successful promotion
+              community.docker.docker_container:
+                name: "{{ backup_container_name }}"
+                state: absent
+              when: current_container.exists
+
+      # ==========================================
+      # 5. FAILURE RECOVERY
+      # ==========================================
+
+      rescue:
+        - name: Report deployment failure
+          ansible.builtin.debug:
+            msg: >-
+              Deployment validation or promotion failed.
+              Checking whether production recovery is necessary.
+
+        - name: Inspect backup container during recovery
+          community.docker.docker_container_info:
+            name: "{{ backup_container_name }}"
+          register: recovery_backup
+          no_log: true
+
+        - name: Inspect production container during recovery
+          community.docker.docker_container_info:
+            name: "{{ app_name }}"
+          register: recovery_current
+          no_log: true
+
+        - name: Restore backup deployment
+          when:
+            - not (candidate_test_mode | bool)
+            - recovery_backup.exists
+          block:
+            - name: Remove failed production container
+              community.docker.docker_container:
+                name: "{{ app_name }}"
+                state: absent
+
+            - name: Rename backup to original application name
+              ansible.builtin.command:
+                argv:
+                  - docker
+                  - rename
+                  - "{{ backup_container_name }}"
+                  - "{{ app_name }}"
+
+            - name: Restart restored production container
+              community.docker.docker_container:
+                name: "{{ app_name }}"
+                state: started
+
+            - name: Verify restored production health
+              ansible.builtin.uri:
+                url: "{{ health_check_url }}"
+                method: GET
+                status_code: 200
+                return_content: true
+              register: restored_health
+              until: >-
+                restored_health.status | default(0) == 200
+                and
+                (restored_health.json | default({})).get('status', '') == 'UP'
+              retries: "{{ health_check_retries | int }}"
+              delay: "{{ health_check_delay | int }}"
+
+            - name: Confirm automatic rollback
+              ansible.builtin.debug:
+                msg: >-
+                  Automatic rollback completed.
+                  Previous production container is healthy.
+
+        - name: Recover original container if stopped before backup rename
+          when:
+            - not (candidate_test_mode | bool)
+            - not recovery_backup.exists
+            - recovery_current.exists
+            - not recovery_current.container.State.Running
+          block:
+            - name: Restart original production container
+              community.docker.docker_container:
+                name: "{{ app_name }}"
+                state: started
+
+            - name: Verify restarted production health
+              ansible.builtin.uri:
+                url: "{{ health_check_url }}"
+                method: GET
+                status_code: 200
+                return_content: true
+              register: recovered_original_health
+              until: >-
+                recovered_original_health.status | default(0) == 200
+                and
+                (recovered_original_health.json | default({})).get('status', '') == 'UP'
+              retries: "{{ health_check_retries | int }}"
+              delay: "{{ health_check_delay | int }}"
+
+        - name: Mark deployment as failed
+          ansible.builtin.fail:
+            msg: >-
+              Deployment failed. Recovery was attempted where necessary.
+              Review the rollback and health-check results above.
+
+      # ==========================================
+      # 6. CANDIDATE CLEANUP
+      # ==========================================
+
+      always:
+        - name: Remove temporary candidate container
+          community.docker.docker_container:
+            name: "{{ candidate_container_name }}"
+            state: absent
+
+    # ==========================================
+    # 7. FINAL RESULT
+    # ==========================================
+
+    - name: Display final deployment result
       ansible.builtin.debug:
-        msg: "Ansible deployment healthy at http://localhost:{{ host_port }}"
+        msg: >-
+          Application endpoint: http://localhost:{{ host_port }}.
+          Image: {{ target_image }}.
+          Candidate-only mode: {{ candidate_test_mode | bool }}.
+          Deployment required: {{ deployment_needed | bool }}.
