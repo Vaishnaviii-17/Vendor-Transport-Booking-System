@@ -1,0 +1,11 @@
+---
+app_name: vendor-transport-ansible
+image_name: vendor-transport-booking
+image_tag: "7"
+
+host_port: 8085
+container_port: 8083
+
+database_url: "jdbc:postgresql://host.docker.internal:5432/vendor_transport_db"
+
+health_check_url: "http://localhost:8085/actuator/health"
