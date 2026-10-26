@@ -1,0 +1,62 @@
+---
+- name: Deploy Vendor Transport Booking System with Ansible
+  hosts: local
+  gather_facts: false
+
+  vars:
+    deployment_env:
+      DB_URL: "{{ database_url }}"
+      DB_USERNAME: "{{ lookup('ansible.builtin.env', 'DB_USERNAME') }}"
+      DB_PASSWORD: "{{ lookup('ansible.builtin.env', 'DB_PASSWORD') }}"
+      JWT_SECRET: "{{ lookup('ansible.builtin.env', 'JWT_SECRET') }}"
+
+  tasks:
+    - name: Verify required deployment secrets are available
+      ansible.builtin.assert:
+        that:
+          - deployment_env.DB_USERNAME | length > 0
+          - deployment_env.DB_PASSWORD | length > 0
+          - deployment_env.JWT_SECRET | length > 0
+        fail_msg: "Required deployment environment variables are missing."
+      no_log: true
+
+    - name: Verify Docker daemon connectivity
+      ansible.builtin.command: docker info
+      changed_when: false
+
+    - name: Verify application image exists
+      ansible.builtin.command:
+        argv:
+          - docker
+          - image
+          - inspect
+          - "{{ image_name }}:{{ image_tag }}"
+      changed_when: false
+
+    - name: Deploy application container
+      community.docker.docker_container:
+        name: "{{ app_name }}"
+        image: "{{ image_name }}:{{ image_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "{{ host_port }}:{{ container_port }}"
+        env: "{{ deployment_env }}"
+        comparisons:
+          env: strict
+      no_log: true
+
+    - name: Wait for application health endpoint
+      ansible.builtin.uri:
+        url: "{{ health_check_url }}"
+        method: GET
+        return_content: true
+        status_code: 200
+      register: app_health
+      until: app_health.status == 200 and app_health.json.status == "UP"
+      retries: 36
+      delay: 5
+
+    - name: Display deployment result
+      ansible.builtin.debug:
+        msg: "Ansible deployment healthy at http://localhost:{{ host_port }}"
