@@ -35,18 +35,30 @@ pipeline {
             }
         }
 
-        stage('Backend Tests') {
-            steps {
-                withCredentials([
-                    string(
-                        credentialsId: 'vendor-jwt-secret',
-                        variable: 'JWT_SECRET'
-                    )
-                ]) {
-                    bat 'mvn -B "-Dtest=*,!VendorTransportSeleniumTest" test'
-                }
+stage('Backend Tests') {
+    steps {
+        withCredentials([
+            string(
+                credentialsId: 'vendor-jwt-secret',
+                variable: 'JWT_SECRET'
+            ),
+            string(
+                credentialsId: 'vendor-db-username',
+                variable: 'DB_USERNAME'
+            ),
+            string(
+                credentialsId: 'vendor-db-password',
+                variable: 'DB_PASSWORD'
+            )
+        ]) {
+            withEnv([
+                'DB_URL=jdbc:postgresql://localhost:5432/vendor_transport_db'
+            ]) {
+                bat 'mvn -B "-Dtest=*,!VendorTransportSeleniumTest" test'
             }
         }
+    }
+}
 
         stage('Check Application') {
             steps {
@@ -83,18 +95,30 @@ pipeline {
             }
         }
 
-        stage('Selenium Tests') {
-            steps {
-                withCredentials([
-                    string(
-                        credentialsId: 'vendor-jwt-secret',
-                        variable: 'JWT_SECRET'
-                    )
-                ]) {
-                    bat 'mvn -B "-Dtest=VendorTransportSeleniumTest" "-Dselenium.headless=true" test'
-                }
+stage('Selenium Tests') {
+    steps {
+        withCredentials([
+            string(
+                credentialsId: 'vendor-jwt-secret',
+                variable: 'JWT_SECRET'
+            ),
+            string(
+                credentialsId: 'vendor-db-username',
+                variable: 'DB_USERNAME'
+            ),
+            string(
+                credentialsId: 'vendor-db-password',
+                variable: 'DB_PASSWORD'
+            )
+        ]) {
+            withEnv([
+                'DB_URL=jdbc:postgresql://localhost:5432/vendor_transport_db'
+            ]) {
+                bat 'mvn -B "-Dtest=VendorTransportSeleniumTest" "-Dselenium.headless=true" test'
             }
         }
+    }
+}
 
         stage('Package') {
             steps {
