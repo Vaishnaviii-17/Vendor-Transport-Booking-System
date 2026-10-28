@@ -1,4 +1,3 @@
-
 package com.vendortransport.booking.repository;
 
 import com.vendortransport.booking.entity.TransportSlot;
@@ -15,10 +14,18 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TransportSlotRepository
-        extends JpaRepository<TransportSlot, Long> {
+        extends JpaRepository<TransportSlot, Long>,
+                TransportSlotRepositoryCustom {
 
     List<TransportSlot> findByDepartureTimeAfter(
             LocalDateTime dateTime
+    );
+
+    List<TransportSlot> findAllByOrderByDepartureTimeAsc();
+
+    boolean existsByVehicle_IdAndDepartureTime(
+            Long vehicleId,
+            LocalDateTime departureTime
     );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

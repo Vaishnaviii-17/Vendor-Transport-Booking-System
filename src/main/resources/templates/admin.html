@@ -1,0 +1,257 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Administrator portal for transport scheduling and booking management.">
+    <title>Administrator Portal | Vendor Transport</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <script src="/js/admin.js" defer></script>
+</head>
+<body class="admin-page">
+<header class="admin-header">
+    <a class="admin-brand" href="/">
+        <span class="admin-brand-mark">VT</span>
+        <span>Vendor Transport<small>ADMINISTRATION PORTAL</small></span>
+    </a>
+    <a class="back-home" href="/">← Back to home</a>
+</header>
+
+<main class="admin-main">
+    <section class="admin-hero">
+        <div>
+            <span class="admin-eyebrow">MANAGEMENT CONSOLE</span>
+            <h1>Transport administration</h1>
+            <p>Schedule vehicles according to capacity and manage customer reservations.</p>
+        </div>
+        <div class="admin-hero-icon" aria-hidden="true">▤</div>
+    </section>
+
+    <div id="admin-notification" class="admin-notification"
+         role="status" aria-live="polite"></div>
+
+    <section class="admin-login-panel" id="admin-login-section">
+        <div class="login-heading">
+            <span class="login-icon" aria-hidden="true">↗</span>
+            <div>
+                <h2>Administrator sign in</h2>
+                <p>Sign in with your authorized administrator account.</p>
+            </div>
+        </div>
+
+        <form id="admin-login-form" class="admin-login-form">
+            <div class="form-field">
+                <label for="admin-email">Email address</label>
+                <input id="admin-email" name="email" type="email"
+                       placeholder="admin@example.com"
+                       autocomplete="username" required>
+            </div>
+            <div class="form-field">
+                <label for="admin-password">Password</label>
+                <input id="admin-password" name="password" type="password"
+                       placeholder="Enter your password"
+                       autocomplete="current-password" required>
+            </div>
+            <button class="admin-primary-button" type="submit">
+                Sign in to dashboard <span>→</span>
+            </button>
+        </form>
+
+        <p class="login-security-note">
+            <span>●</span> Restricted access for authorized administrators
+        </p>
+    </section>
+
+    <section id="admin-dashboard" hidden>
+        <div class="dashboard-heading">
+            <div>
+                <span class="admin-eyebrow">OVERVIEW</span>
+                <h2>Dashboard</h2>
+                <p id="admin-identity"></p>
+            </div>
+            <button id="admin-logout" type="button" class="admin-secondary-button">
+                Sign out
+            </button>
+        </div>
+
+        <div class="admin-stats">
+            <article class="stat-card">
+                <span class="stat-label">TOTAL BOOKINGS</span>
+                <strong id="total-count">0</strong>
+                <span class="stat-caption">All requests</span>
+            </article>
+            <article class="stat-card stat-pending">
+                <span class="stat-label">PENDING</span>
+                <strong id="pending-count">0</strong>
+                <span class="stat-caption">Awaiting review</span>
+            </article>
+            <article class="stat-card stat-confirmed">
+                <span class="stat-label">CONFIRMED</span>
+                <strong id="confirmed-count">0</strong>
+                <span class="stat-caption">Approved bookings</span>
+            </article>
+            <article class="stat-card stat-rejected">
+                <span class="stat-label">REJECTED</span>
+                <strong id="rejected-count">0</strong>
+                <span class="stat-caption">Declined requests</span>
+            </article>
+        </div>
+
+        <section class="bookings-panel">
+            <section class="admin-create-booking" aria-labelledby="schedule-title">
+                <div class="create-booking-heading">
+                    <div>
+                        <span class="admin-eyebrow">FLEET MANAGEMENT</span>
+                        <h2 id="schedule-title">Schedule transport</h2>
+                        <p>Define a journey, find suitable vehicles, and assign one.</p>
+                    </div>
+                    <span class="create-booking-icon" aria-hidden="true">＋</span>
+                </div>
+
+                <form id="admin-schedule-form" class="admin-booking-form">
+                    <div class="form-field">
+                        <label for="schedule-origin">Origin</label>
+                        <input id="schedule-origin" name="origin"
+                               placeholder="e.g. Mumbai" required maxlength="150">
+                    </div>
+
+                    <div class="form-field">
+                        <label for="schedule-destination">Destination</label>
+                        <input id="schedule-destination" name="destination"
+                               placeholder="e.g. Pune" required maxlength="150">
+                    </div>
+
+                    <div class="form-field">
+                        <label for="schedule-departure">Departure date and time</label>
+                        <input id="schedule-departure" name="departureTime"
+                               type="datetime-local" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="schedule-vehicle-type">Vehicle type</label>
+                        <select id="schedule-vehicle-type" name="vehicleType" required>
+                            <option value="">Select type</option>
+                            <option value="CAR">Car</option>
+                            <option value="SUV">SUV</option>
+                            <option value="VAN">Van</option>
+                            <option value="MINIBUS">Minibus</option>
+                            <option value="BUS">Bus</option>
+                            <option value="TRUCK">Truck</option>
+                            <option value="TEMPO_TRAVELLER">Tempo Traveller</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="schedule-capacity">Minimum required capacity</label>
+                        <input id="schedule-capacity" name="minimumCapacity"
+                               type="number" min="1" step="1" value="40" required>
+                        <small>Example: 40 means a vehicle with at least 40 seats.</small>
+                    </div>
+
+                    <div class="schedule-actions">
+                        <button id="find-vehicles-button" type="button"
+                                class="admin-secondary-button">
+                            Find matching vehicles
+                        </button>
+                    </div>
+
+                    <div class="form-field vehicle-selection-field">
+                        <label for="schedule-vehicle">Available matching vehicles</label>
+                        <select id="schedule-vehicle" name="vehicleId" required disabled>
+                            <option value="">Find vehicles first</option>
+                        </select>
+                        <small id="vehicle-selection-help" aria-live="polite">
+                            Choose the route, departure time, type, and capacity first.
+                        </small>
+                    </div>
+
+                    <button id="schedule-transport-button" type="submit"
+                            class="admin-primary-button" disabled>
+                        Schedule transport <span>→</span>
+                    </button>
+                </form>
+
+                <p class="create-booking-help">
+                    Only active vehicles of the selected type with sufficient capacity
+                    are listed. A vehicle must not already have a transport slot at
+                    the same departure time.
+                </p>
+            </section>
+
+            <section class="scheduled-transport-section">
+                <div class="bookings-heading">
+                    <div>
+                        <h2>Scheduled transport</h2>
+                        <p>View transport slots created by the administrator.</p>
+                    </div>
+                    <button id="refresh-schedules" type="button"
+                            class="admin-secondary-button">↻ Refresh</button>
+                </div>
+
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                        <tr>
+                            <th>Slot ID</th>
+                            <th>Vehicle</th>
+                            <th>Type</th>
+                            <th>Capacity</th>
+                            <th>Route</th>
+                            <th>Departure</th>
+                            <th>Seats available</th>
+                        </tr>
+                        </thead>
+                        <tbody id="admin-schedules-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="booking-management-section">
+                <div class="bookings-heading">
+                    <div>
+                        <h2>Manage customer bookings</h2>
+                        <p>Review customer requests and update their status.</p>
+                    </div>
+                    <button id="refresh-bookings" type="button"
+                            class="admin-secondary-button">↻ Refresh</button>
+                </div>
+
+                <div class="bookings-controls">
+                    <label for="booking-filter">Booking status
+                        <select id="booking-filter">
+                            <option value="ALL">All bookings</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="CONFIRMED">Confirmed</option>
+                            <option value="REJECTED">Rejected</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Route</th>
+                            <th>Departure</th>
+                            <th>Seats</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="admin-bookings-body"></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+    </section>
+</main>
+
+<footer class="admin-footer">
+    <span>Vendor Transport Booking System</span>
+    <span>Administrator Portal</span>
+</footer>
+</body>
+</html>

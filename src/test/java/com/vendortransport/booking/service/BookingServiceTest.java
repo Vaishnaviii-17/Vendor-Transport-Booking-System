@@ -41,6 +41,7 @@ class BookingServiceTest {
 
     private User customer;
     private TransportSlot slot;
+    private Vehicle vehicle;
 
     @BeforeEach
     void setUp() {
@@ -49,21 +50,25 @@ class BookingServiceTest {
         customer.setEmail("customer@example.com");
         customer.setRole(UserRole.CUSTOMER);
 
+        vehicle = new Vehicle();
+        vehicle.setId(1L);
+        vehicle.setRegistrationNumber("MH01AB1234");
+        vehicle.setVehicleType(VehicleType.MINIBUS);
+        vehicle.setCapacity(20);
+        vehicle.setActive(true);
+
         slot = new TransportSlot();
         slot.setId(1L);
         slot.setOrigin("Thane Station");
         slot.setDestination("Mumbai Airport");
-        slot.setDepartureTime(
-                LocalDateTime.now().plusDays(10)
-        );
+        slot.setDepartureTime(LocalDateTime.now().plusDays(10));
         slot.setAvailableSeats(4);
+        slot.setVehicle(vehicle);
     }
 
     @Test
     void shouldCreateBookingSuccessfully() {
-
-        when(userRepository.findByEmail(
-                "customer@example.com"))
+        when(userRepository.findByEmail("customer@example.com"))
                 .thenReturn(Optional.of(customer));
 
         when(slotRepository.findByIdForUpdate(1L))
@@ -92,26 +97,21 @@ class BookingServiceTest {
 
     @Test
     void shouldRejectInsufficientSeats() {
-
-        when(userRepository.findByEmail(
-                "customer@example.com"))
+        when(userRepository.findByEmail("customer@example.com"))
                 .thenReturn(Optional.of(customer));
 
         when(slotRepository.findByIdForUpdate(1L))
                 .thenReturn(Optional.of(slot));
 
-        ResponseStatusException exception =
-                assertThrows(ResponseStatusException.class,
-                        () -> bookingService.createBooking(
-                                "customer@example.com",
-                                new BookingRequest(1L, 5)
-                        ));
-
-        assertEquals(
-                HttpStatus.CONFLICT,
-                exception.getStatusCode()
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> bookingService.createBooking(
+                        "customer@example.com",
+                        new BookingRequest(1L, 5)
+                )
         );
 
+        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
         assertEquals(4, slot.getAvailableSeats());
 
         verify(bookingRepository, never())
@@ -120,25 +120,21 @@ class BookingServiceTest {
 
     @Test
     void shouldRejectInvalidSlot() {
-
-        when(userRepository.findByEmail(
-                "customer@example.com"))
+        when(userRepository.findByEmail("customer@example.com"))
                 .thenReturn(Optional.of(customer));
 
         when(slotRepository.findByIdForUpdate(999L))
                 .thenReturn(Optional.empty());
 
-        ResponseStatusException exception =
-                assertThrows(ResponseStatusException.class,
-                        () -> bookingService.createBooking(
-                                "customer@example.com",
-                                new BookingRequest(999L, 1)
-                        ));
-
-        assertEquals(
-                HttpStatus.NOT_FOUND,
-                exception.getStatusCode()
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> bookingService.createBooking(
+                        "customer@example.com",
+                        new BookingRequest(999L, 1)
+                )
         );
+
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
 
         verify(bookingRepository, never())
                 .saveAndFlush(any(Booking.class));
@@ -146,76 +142,85 @@ class BookingServiceTest {
 
     @Test
     void shouldRejectZeroSeats() {
-
-        when(userRepository.findByEmail(
-                "customer@example.com"))
+        when(userRepository.findByEmail("customer@example.com"))
                 .thenReturn(Optional.of(customer));
 
         when(slotRepository.findByIdForUpdate(1L))
                 .thenReturn(Optional.of(slot));
 
-        ResponseStatusException exception =
-                assertThrows(ResponseStatusException.class,
-                        () -> bookingService.createBooking(
-                                "customer@example.com",
-                                new BookingRequest(1L, 0)
-                        ));
-
-        assertEquals(
-                HttpStatus.BAD_REQUEST,
-                exception.getStatusCode()
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> bookingService.createBooking(
+                        "customer@example.com",
+                        new BookingRequest(1L, 0)
+                )
         );
 
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals(4, slot.getAvailableSeats());
     }
 
     @Test
     void shouldRejectPastDeparture() {
+        slot.setDepartureTime(LocalDateTime.now().minusDays(1));
 
-        slot.setDepartureTime(
-                LocalDateTime.now().minusDays(1)
-        );
-
-        when(userRepository.findByEmail(
-                "customer@example.com"))
+        when(userRepository.findByEmail("customer@example.com"))
                 .thenReturn(Optional.of(customer));
 
         when(slotRepository.findByIdForUpdate(1L))
                 .thenReturn(Optional.of(slot));
 
-        ResponseStatusException exception =
-                assertThrows(ResponseStatusException.class,
-                        () -> bookingService.createBooking(
-                                "customer@example.com",
-                                new BookingRequest(1L, 1)
-                        ));
-
-        assertEquals(
-                HttpStatus.BAD_REQUEST,
-                exception.getStatusCode()
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> bookingService.createBooking(
+                        "customer@example.com",
+                        new BookingRequest(1L, 1)
+                )
         );
 
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertEquals(4, slot.getAvailableSeats());
     }
 
     @Test
-    void shouldRejectUnknownCustomer() {
+    void shouldRejectInactiveVehicle() {
+        vehicle.setActive(false);
 
-        when(userRepository.findByEmail(
-                "unknown@example.com"))
+        when(userRepository.findByEmail("customer@example.com"))
+                .thenReturn(Optional.of(customer));
+
+        when(slotRepository.findByIdForUpdate(1L))
+                .thenReturn(Optional.of(slot));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> bookingService.createBooking(
+                        "customer@example.com",
+                        new BookingRequest(1L, 1)
+                )
+        );
+
+        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+        assertEquals(4, slot.getAvailableSeats());
+
+        verify(bookingRepository, never())
+                .saveAndFlush(any(Booking.class));
+    }
+
+    @Test
+    void shouldRejectUnknownCustomer() {
+        when(userRepository.findByEmail("unknown@example.com"))
                 .thenReturn(Optional.empty());
 
-        ResponseStatusException exception =
-                assertThrows(ResponseStatusException.class,
-                        () -> bookingService.createBooking(
-                                "unknown@example.com",
-                                new BookingRequest(1L, 1)
-                        ));
-
-        assertEquals(
-                HttpStatus.UNAUTHORIZED,
-                exception.getStatusCode()
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> bookingService.createBooking(
+                        "unknown@example.com",
+                        new BookingRequest(1L, 1)
+                )
         );
+
+        assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
 
         verifyNoInteractions(slotRepository);
         verifyNoInteractions(bookingRepository);

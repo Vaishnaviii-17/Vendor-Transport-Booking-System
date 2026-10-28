@@ -1,12 +1,14 @@
 
 package com.vendortransport.booking.service;
 
+import com.vendortransport.booking.dto.AdminBookingRequest;
 import com.vendortransport.booking.dto.BookingRequest;
 import com.vendortransport.booking.dto.BookingResponse;
 import com.vendortransport.booking.entity.Booking;
 import com.vendortransport.booking.entity.BookingStatus;
 import com.vendortransport.booking.entity.TransportSlot;
 import com.vendortransport.booking.entity.User;
+import com.vendortransport.booking.entity.UserRole;
 import com.vendortransport.booking.repository.BookingRepository;
 import com.vendortransport.booking.repository.TransportSlotRepository;
 import com.vendortransport.booking.repository.UserRepository;
@@ -40,7 +42,6 @@ public class BookingService {
             String customerEmail,
             BookingRequest request
     ) {
-
         User customer = userRepository
                 .findByEmail(customerEmail)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -55,11 +56,14 @@ public class BookingService {
                         "Transport slot not found"
                 ));
 
-        if (slot.getDepartureTime()
-                .isBefore(LocalDateTime.now())
-                || slot.getDepartureTime()
-                .isEqual(LocalDateTime.now())) {
+        if (!Boolean.TRUE.equals(slot.getVehicle().getActive())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "This vehicle is currently unavailable"
+            );
+        }
 
+        if (!slot.getDepartureTime().isAfter(LocalDateTime.now())) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Cannot book a past or departed transport slot"
@@ -68,16 +72,13 @@ public class BookingService {
 
         if (request.seatsRequested() == null
                 || request.seatsRequested() < 1) {
-
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Seats requested must be at least 1"
             );
         }
 
-        if (slot.getAvailableSeats()
-                < request.seatsRequested()) {
-
+        if (slot.getAvailableSeats() < request.seatsRequested()) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Insufficient seats available"
@@ -96,9 +97,32 @@ public class BookingService {
 
         slotRepository.save(slot);
 
-        Booking savedBooking =
-                bookingRepository.saveAndFlush(booking);
+        Booking savedBooking = bookingRepository.saveAndFlush(booking);
 
         return BookingResponse.from(savedBooking);
+    }
+
+    @Transactional
+    public BookingResponse createAdminBooking(AdminBookingRequest request) {
+        User customer = userRepository
+                .findByEmail(request.customerEmail().trim())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Customer not found"
+                ));
+
+        if (customer.getRole() != UserRole.CUSTOMER) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Bookings can only be created for customer accounts"
+            );
+        }
+
+        BookingRequest bookingRequest = new BookingRequest(
+                request.slotId(),
+                request.seatsRequested()
+        );
+
+        return createBooking(customer.getEmail(), bookingRequest);
     }
 }

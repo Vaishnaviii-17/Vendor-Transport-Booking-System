@@ -1,4 +1,3 @@
-
 package com.vendortransport.booking.repository;
 
 import com.vendortransport.booking.entity.Vehicle;
@@ -15,7 +14,13 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     List<Vehicle> findByActiveTrue();
 
     List<Vehicle> findByVehicleTypeAndActiveTrue(
-        VehicleType vehicleType
+            VehicleType vehicleType
+    );
+
+    List<Vehicle>
+    findByActiveTrueAndVehicleTypeAndCapacityGreaterThanEqualOrderByCapacityAsc(
+            VehicleType vehicleType,
+            Integer capacity
     );
 
     boolean existsByRegistrationNumber(String registrationNumber);

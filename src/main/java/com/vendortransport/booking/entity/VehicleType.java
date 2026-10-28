@@ -1,4 +1,3 @@
-
 package com.vendortransport.booking.entity;
 
 public enum VehicleType {
@@ -6,5 +5,7 @@ public enum VehicleType {
     VAN,
     MINIBUS,
     BUS,
-    TRUCK
+    TRUCK,
+    TEMPO_TRAVELLER,
+    SUV
 }

@@ -4,138 +4,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vendor Transport Booking System</title>
+    <meta name="theme-color" content="#102a43">
+    <title>Vendor Transport | Book Your Journey</title>
     <link rel="stylesheet" href="/css/app.css">
     <script src="/js/app.js" defer></script>
 </head>
-
 <body>
     <header class="site-header">
         <div class="container header-content">
-            <h1>Vendor Transport</h1>
-            <span>Booking Management Portal</span>
+            <a class="brand" href="/">
+                <span class="brand-mark">VT</span>
+                <span>Vendor<span class="brand-light">Transport</span></span>
+            </a>
+            <nav class="portal-navigation">
+                <a href="#search-section">Find Transport</a>
+                <a href="#history-section">My Bookings</a>
+                <a class="admin-link" href="/admin">Admin Portal ↗</a>
+            </nav>
         </div>
     </header>
 
-    <main class="container">
+    <main>
         <section class="hero">
-            <h2>Reliable Transport Booking</h2>
-            <p>
-                Register, sign in, check vehicle availability,
-                and manage your transport bookings.
-            </p>
+            <div class="container hero-content">
+                <div class="hero-copy">
+                    <span class="eyebrow">YOUR JOURNEY, SIMPLIFIED</span>
+                    <h1>Every journey starts with a <span>better ride.</span></h1>
+                    <p>Find the right vehicle, choose your seats, and book your next trip with confidence.</p>
+                    <div class="hero-points">
+                        <span>✓ Live transport search</span>
+                        <span>✓ Simple booking</span>
+                        <span>✓ Booking history</span>
+                    </div>
+                </div>
+                <div class="hero-art" aria-hidden="true">
+                    <div class="art-circle"></div>
+                    <div class="art-card">
+                        <span class="art-icon">↗</span>
+                        <p>YOUR NEXT DESTINATION</p>
+                        <strong>Adventure awaits.</strong>
+                        <div class="art-route"><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="floating-tag">✦ Travel made easier</div>
+                </div>
+            </div>
         </section>
 
-        <div id="notification" role="status" aria-live="polite"></div>
+        <div class="container page-content">
+            <div id="notification" role="status" aria-live="polite"></div>
 
-        <div class="dashboard">
+            <section class="search-panel" id="search-section">
+                <div class="section-heading">
+                    <div>
+                        <span class="eyebrow">PLAN YOUR TRIP</span>
+                        <h2>Find your transport</h2>
+                    </div>
+                    <span class="live-label"><span></span> Search available slots</span>
+                </div>
 
-            <section class="card" id="register-section">
-                <h2>Create Account</h2>
-
-                <form id="register-form">
-                    <label for="register-name">Full Name</label>
-                    <input id="register-name" required>
-
-                    <label for="register-email">Email</label>
-                    <input id="register-email" type="email" required>
-
-                    <label for="register-password">Password</label>
-                    <input id="register-password"
-                           type="password"
-                           minlength="8"
-                           required>
-
-                    <button id="register-button" type="submit">
-                        Register
-                    </button>
+                <form id="transport-search-form">
+                    <div class="search-grid">
+                        <div class="field">
+                            <label for="search-origin">FROM</label>
+                            <input id="search-origin" placeholder="e.g. Thane Station">
+                        </div>
+                        <div class="field">
+                            <label for="search-destination">TO</label>
+                            <input id="search-destination" placeholder="e.g. Mumbai Airport">
+                        </div>
+                        <div class="field">
+                            <label for="search-date">TRAVEL DATE</label>
+                            <input id="search-date" type="date">
+                        </div>
+                        <div class="field">
+                            <label for="search-vehicle-type">VEHICLE TYPE</label>
+                            <select id="search-vehicle-type">
+                                <option value="">All vehicles</option>
+                                <option value="CAR">Car</option>
+                                <option value="SUV">SUV</option>
+                                <option value="VAN">Van</option>
+                                <option value="MINIBUS">Minibus</option>
+                                <option value="TEMPO_TRAVELLER">Tempo Traveller</option>
+                                <option value="BUS">Bus</option>
+                                <option value="TRUCK">Truck</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="search-seats">PASSENGERS / SEATS</label>
+                            <input id="search-seats" type="number" min="1" value="1" required>
+                        </div>
+                    </div>
+                    <div class="search-actions">
+                        <button id="search-button" class="primary-button" type="submit">
+                            Search Available Transport <span>→</span>
+                        </button>
+                        <button id="clear-search" class="text-button" type="button">Clear filters</button>
+                    </div>
                 </form>
             </section>
 
-            <section class="card" id="login-section">
-                <h2>Customer Login</h2>
-
-                <form id="login-form">
-                    <label for="login-email">Email</label>
-                    <input id="login-email" type="email" required>
-
-                    <label for="login-password">Password</label>
-                    <input id="login-password" type="password" required>
-
-                    <button id="login-button" type="submit">
-                        Sign In
-                    </button>
-                </form>
-
-                <p id="login-status">Not signed in</p>
-
-                <button id="logout-button"
-                        type="button"
-                        class="secondary-button"
-                        hidden>
-                    Sign Out
-                </button>
+            <section class="results-section" id="results-section">
+                <div class="section-heading results-heading">
+                    <div>
+                        <span class="eyebrow">YOUR OPTIONS</span>
+                        <h2>Available journeys</h2>
+                        <p id="results-summary">Search to see available transport.</p>
+                    </div>
+                    <span id="results-count" class="count-pill">0 journeys</span>
+                </div>
+                <div id="transport-results" class="transport-grid">
+                    <div class="empty-state">
+                        <span class="empty-icon">⌕</span>
+                        <h3>Where would you like to go?</h3>
+                        <p>Enter your route and preferences above to find available transport.</p>
+                    </div>
+                </div>
             </section>
 
-            <section class="card" id="availability-section">
-                <h2>Vehicle Availability</h2>
+            <section class="account-grid">
+                <section class="panel" id="register-section">
+                    <span class="eyebrow">NEW HERE?</span>
+                    <h2>Create your account</h2>
+                    <p class="panel-description">Register to start managing your transport bookings.</p>
+                    <form id="register-form">
+                        <label for="register-name">Full name</label>
+                        <input id="register-name" autocomplete="name" required>
+                        <label for="register-email">Email address</label>
+                        <input id="register-email" type="email" autocomplete="email" required>
+                        <label for="register-password">Password</label>
+                        <input id="register-password" type="password" minlength="8"
+                               autocomplete="new-password" required>
+                        <button id="register-button" class="primary-button full-button" type="submit">Create account</button>
+                    </form>
+                </section>
 
-                <label for="availability-date">Select Date</label>
-                <input id="availability-date" type="date">
-
-                <button id="availability-button" type="button">
-                    Search Availability
-                </button>
-
-                <div id="availability-results"></div>
+                <section class="panel" id="login-section">
+                    <span class="eyebrow">WELCOME BACK</span>
+                    <h2>Customer sign in</h2>
+                    <p class="panel-description">Sign in to book a journey and view your bookings.</p>
+                    <form id="login-form">
+                        <label for="login-email">Email address</label>
+                        <input id="login-email" type="email" autocomplete="username" required>
+                        <label for="login-password">Password</label>
+                        <input id="login-password" type="password" autocomplete="current-password" required>
+                        <button id="login-button" class="primary-button full-button" type="submit">Sign in</button>
+                    </form>
+                    <div class="signed-in-row">
+                        <p id="login-status">Not signed in</p>
+                        <button id="logout-button" class="text-button" type="button" hidden>Sign out</button>
+                    </div>
+                    <p class="panel-footnote">Administrator? <a href="/admin">Open the admin portal</a>.</p>
+                </section>
             </section>
 
-            <section class="card" id="booking-section">
-                <h2>Create Booking</h2>
-
-                <p class="hint">
-                    Enter a valid transport booking slot ID.
-                    Availability IDs may belong to a different
-                    slot model.
-                </p>
-
-                <form id="booking-form">
-                    <label for="booking-slot-id">Transport Slot ID</label>
-                    <input id="booking-slot-id"
-                           type="number"
-                           min="1"
-                           required>
-
-                    <label for="booking-seats">Seats Requested</label>
-                    <input id="booking-seats"
-                           type="number"
-                           min="1"
-                           value="1"
-                           required>
-
-                    <button id="booking-button" type="submit">
-                        Submit Booking
-                    </button>
-                </form>
-
-                <div id="booking-result"></div>
+            <section class="panel history-panel" id="history-section">
+                <div class="section-heading">
+                    <div>
+                        <span class="eyebrow">YOUR TRIPS</span>
+                        <h2>My bookings</h2>
+                        <p class="panel-description">Review the bookings linked to your account.</p>
+                    </div>
+                    <button id="history-button" class="secondary-button" type="button">Load booking history</button>
+                </div>
+                <div id="booking-history" class="history-results">
+                    <p class="muted">Sign in and load your booking history to see your trips here.</p>
+                </div>
             </section>
-
-            <section class="card full-width" id="history-section">
-                <h2>My Bookings</h2>
-
-                <button id="history-button" type="button">
-                    View Booking History
-                </button>
-
-                <div id="booking-history"></div>
-            </section>
-
         </div>
     </main>
 
     <footer>
-        Vendor Transport Booking System | DevOps Project
+        <div class="container footer-content">
+            <a class="brand footer-brand" href="/">
+                <span class="brand-mark">VT</span>
+                <span>Vendor<span class="brand-light">Transport</span></span>
+            </a>
+            <p>Reliable journeys. Simpler bookings.</p>
+            <span>DevOps Project</span>
+        </div>
     </footer>
 </body>
 </html>
