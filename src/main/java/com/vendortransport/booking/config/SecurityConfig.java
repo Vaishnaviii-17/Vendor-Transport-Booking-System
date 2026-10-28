@@ -36,6 +36,9 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
+                .dispatcherTypeMatchers(
+                    DispatcherType.ERROR
+                ).permitAll()
                 .requestMatchers(
                     HttpMethod.POST,
                     "/api/auth/register",
@@ -59,6 +62,23 @@ public class SecurityConfig {
             HttpSecurity http,
             JwtAuthenticationConverter jwtAuthenticationConverter
     ) throws Exception {
+
+        JwtAuthenticationConverter converter =
+            new JwtAuthenticationConverter();
+
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            String role = jwt.getClaimAsString("role");
+
+            if (role == null || role.isBlank()) {
+                return java.util.List.of();
+            }
+
+            return java.util.List.of(
+                new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                    "ROLE_" + role
+                )
+            );
+        });
 
         http
             .csrf(csrf -> csrf.disable())
