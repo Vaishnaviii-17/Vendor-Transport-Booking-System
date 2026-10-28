@@ -3,36 +3,25 @@ package com.vendortransport.booking.service;
 
 import com.vendortransport.booking.entity.User;
 
-import org.springframework.beans.factory.annotation.Value;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
-import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.stereotype.Service;
-
-import java.time.Duration;
-import java.time.Instant;
 
 @Service
 public class JwtService {
 
+    public static final long EXPIRATION_SECONDS = 3600;
+
     private final JwtEncoder jwtEncoder;
-    private final long expirationMinutes;
 
-    public JwtService(
-            JwtEncoder jwtEncoder,
-            @Value("${app.jwt.expiration-minutes:60}")
-            long expirationMinutes) {
-
-        if (expirationMinutes <= 0) {
-            throw new IllegalArgumentException(
-                "JWT expiration must be positive"
-            );
-        }
-
+    public JwtService(JwtEncoder jwtEncoder) {
         this.jwtEncoder = jwtEncoder;
-        this.expirationMinutes = expirationMinutes;
     }
 
     public String generateToken(User user) {
@@ -41,11 +30,11 @@ public class JwtService {
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
             .issuer("vendor-transport-booking")
-            .subject(user.getEmail())
             .issuedAt(now)
             .expiresAt(
-                now.plus(Duration.ofMinutes(expirationMinutes))
+                now.plus(EXPIRATION_SECONDS, ChronoUnit.SECONDS)
             )
+            .subject(user.getEmail())
             .claim("userId", user.getId())
             .claim("role", user.getRole().name())
             .build();
@@ -56,9 +45,5 @@ public class JwtService {
         return jwtEncoder.encode(
             JwtEncoderParameters.from(header, claims)
         ).getTokenValue();
-    }
-
-    public long getExpiresInSeconds() {
-        return Duration.ofMinutes(expirationMinutes).toSeconds();
     }
 }

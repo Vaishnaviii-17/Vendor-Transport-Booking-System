@@ -1,0 +1,751 @@
+
+:root {
+    --admin-navy: #10243b;
+    --admin-navy-light: #193754;
+    --admin-teal: #13a997;
+    --admin-text: #192d43;
+    --admin-muted: #6d7d8f;
+    --admin-line: #e1e8ef;
+    --admin-bg: #f4f7fb;
+    --admin-white: #fff;
+}
+
+* { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+body.admin-page {
+    min-height: 100vh;
+    margin: 0;
+    color: var(--admin-text);
+    background: var(--admin-bg);
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    line-height: 1.55;
+}
+
+.admin-page button,
+.admin-page input,
+.admin-page select { font: inherit; }
+
+.admin-header {
+    min-height: 78px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 14px max(6%, calc((100% - 1240px) / 2));
+    background: var(--admin-white);
+    border-bottom: 1px solid var(--admin-line);
+}
+
+.admin-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--admin-text);
+    font-size: 15px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.admin-brand-mark {
+    display: grid;
+    place-items: center;
+    width: 43px;
+    height: 43px;
+    color: #fff;
+    background: var(--admin-navy);
+    border-radius: 12px;
+    font-size: 14px;
+}
+
+.admin-brand small {
+    display: block;
+    margin-top: 2px;
+    color: var(--admin-muted);
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: 1.3px;
+}
+
+.back-home {
+    color: var(--admin-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+.back-home:hover { color: var(--admin-teal); }
+
+.admin-main {
+    width: min(1180px, 88%);
+    min-height: calc(100vh - 145px);
+    margin: 0 auto;
+    padding: 34px 0 58px;
+}
+
+.admin-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 26px;
+    padding: 28px 32px;
+    overflow: hidden;
+    color: #fff;
+    background:
+        radial-gradient(circle at 85% 15%, rgba(19,169,151,.25), transparent 32%),
+        linear-gradient(115deg, var(--admin-navy), var(--admin-navy-light));
+    border-radius: 18px;
+}
+
+.admin-eyebrow {
+    color: var(--admin-teal);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: 1.6px;
+}
+
+.admin-hero .admin-eyebrow { color: #76e0d2; }
+
+.admin-hero h1 {
+    margin: 7px 0 8px;
+    font-size: clamp(25px, 3vw, 34px);
+    line-height: 1.2;
+    letter-spacing: -.8px;
+}
+
+.admin-hero p {
+    max-width: 640px;
+    margin: 0;
+    color: #d0dce7;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.admin-hero-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 66px;
+    width: 66px;
+    height: 66px;
+    color: #8ce6dc;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 18px;
+    font-size: 30px;
+}
+
+.admin-notification {
+    margin: 0 0 16px;
+    color: #9f2d2d;
+    font-size: 13px;
+}
+.admin-notification:empty { display: none; }
+
+.admin-login-panel {
+    width: min(100%, 520px);
+    margin: 28px auto;
+    padding: 30px;
+    background: var(--admin-white);
+    border: 1px solid var(--admin-line);
+    border-radius: 17px;
+    box-shadow: 0 12px 34px rgba(22,43,65,.055);
+}
+
+.login-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 26px;
+}
+
+.login-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    color: #087e75;
+    background: #e6f8f5;
+    border-radius: 13px;
+    font-size: 24px;
+}
+
+.login-heading h2 {
+    margin: 0 0 5px;
+    font-size: 21px;
+    letter-spacing: -.4px;
+}
+.login-heading p {
+    margin: 0;
+    color: var(--admin-muted);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.admin-login-form { display: grid; gap: 18px; }
+
+.form-field { display: grid; gap: 7px; }
+
+.form-field label {
+    color: #34485d;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.form-field input,
+.bookings-controls select {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px 13px;
+    color: var(--admin-text);
+    background: #fff;
+    border: 1px solid #d5dfe8;
+    border-radius: 9px;
+    outline: none;
+}
+
+.form-field input::placeholder { color: #9ba8b5; }
+
+.form-field input:focus,
+.bookings-controls select:focus {
+    border-color: var(--admin-teal);
+    box-shadow: 0 0 0 3px rgba(19,169,151,.12);
+}
+
+.admin-primary-button,
+.admin-secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 42px;
+    padding: 10px 16px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 750;
+    transition: background .15s ease, transform .15s ease;
+}
+
+.admin-primary-button {
+    width: 100%;
+    margin-top: 3px;
+    color: #fff;
+    background: var(--admin-navy);
+    border: 1px solid var(--admin-navy);
+}
+.admin-primary-button:hover { background: var(--admin-navy-light); }
+.admin-primary-button span { font-size: 17px; }
+
+.admin-secondary-button {
+    color: var(--admin-text);
+    background: #fff;
+    border: 1px solid #d8e1e9;
+}
+.admin-secondary-button:hover { background: #f0f5f8; }
+
+.login-security-note {
+    margin: 22px 0 0;
+    padding-top: 17px;
+    color: var(--admin-muted);
+    border-top: 1px solid var(--admin-line);
+    font-size: 11px;
+}
+.login-security-note span { margin-right: 6px; color: var(--admin-teal); }
+
+.dashboard-heading,
+.bookings-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.dashboard-heading { margin: 30px 0 22px; }
+
+.dashboard-heading h2 {
+    margin: 4px 0;
+    font-size: 26px;
+    letter-spacing: -.7px;
+}
+.dashboard-heading p,
+.bookings-heading p {
+    margin: 3px 0 0;
+    color: var(--admin-muted);
+    font-size: 12px;
+}
+
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    min-width: 0;
+    padding: 21px;
+    background: #fff;
+    border: 1px solid var(--admin-line);
+    border-radius: 14px;
+    box-shadow: 0 5px 18px rgba(22,43,65,.025);
+}
+
+.stat-label {
+    display: block;
+    color: var(--admin-muted);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .8px;
+}
+
+.stat-card strong {
+    display: block;
+    margin: 10px 0 4px;
+    color: var(--admin-navy);
+    font-size: 31px;
+    line-height: 1.2;
+}
+.stat-caption { color: var(--admin-muted); font-size: 11px; }
+
+.stat-pending { border-top: 3px solid #e7ae3d; }
+.stat-confirmed { border-top: 3px solid #18a779; }
+.stat-rejected { border-top: 3px solid #dc6565; }
+
+.bookings-panel {
+    padding: 25px;
+    background: #fff;
+    border: 1px solid var(--admin-line);
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(22,43,65,.035);
+}
+
+.bookings-heading {
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--admin-line);
+}
+.bookings-heading h2 { margin: 0; font-size: 19px; }
+
+.bookings-controls {
+    display: flex;
+    justify-content: flex-end;
+    padding: 18px 0 5px;
+}
+.bookings-controls label {
+    display: grid;
+    gap: 6px;
+    width: min(100%, 220px);
+    color: #526477;
+    font-size: 11px;
+    font-weight: 750;
+}
+.bookings-controls select { min-height: 40px; padding: 8px 10px; font-size: 12px; }
+
+.admin-table-wrap {
+    width: 100%;
+    margin-top: 10px;
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.admin-table th {
+    padding: 13px 12px;
+    color: #6c7c8d;
+    background: #f5f8fb;
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .5px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.admin-table td {
+    padding: 14px 12px;
+    color: #34485d;
+    border-bottom: 1px solid #edf1f5;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:hover { background: #f8fbfc; }
+.admin-table td:last-child { white-space: nowrap; }
+
+.confirm-button, .reject-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2px;
+    padding: 7px 10px;
+    color: #fff;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 750;
+}
+.confirm-button { background: #17865c; }
+.confirm-button:hover { background: #126b49; }
+.reject-button { background: #b83b3b; }
+.reject-button:hover { background: #922c2c; }
+
+.booking-status { font-weight: 800; }
+.status-pending { color: #a66c05; }
+.status-confirmed { color: #13835a; }
+.status-rejected, .status-cancelled { color: #b33434; }
+
+.admin-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 20px 6%;
+    color: var(--admin-muted);
+    background: #fff;
+    border-top: 1px solid var(--admin-line);
+    font-size: 11px;
+}
+
+@media (max-width: 900px) {
+    .admin-main { width: 92%; }
+    .admin-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+    .admin-header { align-items: flex-start; flex-direction: column; gap: 12px; }
+    .admin-main { width: 92%; padding-top: 20px; }
+    .admin-hero { padding: 22px; }
+    .admin-hero-icon { display: none; }
+    .admin-login-panel { padding: 22px; }
+    .admin-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { padding: 15px; }
+    .stat-card strong { font-size: 26px; }
+    .bookings-panel { padding: 16px; }
+    .bookings-heading { align-items: flex-start; flex-direction: column; }
+    .dashboard-heading { align-items: flex-start; }
+    .admin-footer { align-items: flex-start; flex-direction: column; }
+}
+
+/* =========================================
+   CREATE BOOKING FORM
+   ========================================= */
+
+.admin-create-booking {
+    margin-bottom: 28px;
+    padding: 24px;
+    background:
+        radial-gradient(
+            circle at 100% 0,
+            rgba(19, 169, 151, 0.08),
+            transparent 36%
+        ),
+        #fbfdfd;
+    border: 1px solid #dcebe8;
+    border-radius: 13px;
+}
+
+.create-booking-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.create-booking-heading h2 {
+    margin: 5px 0;
+    color: var(--admin-navy);
+    font-size: 20px;
+    letter-spacing: -0.4px;
+}
+
+.create-booking-heading p {
+    margin: 0;
+    color: var(--admin-muted);
+    font-size: 12px;
+}
+
+.create-booking-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 45px;
+    width: 45px;
+    height: 45px;
+    color: #087e75;
+    background: #e4f7f3;
+    border: 1px solid #c9eee7;
+    border-radius: 12px;
+    font-size: 27px;
+}
+
+.admin-booking-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) 110px auto;
+    align-items: end;
+    gap: 14px;
+}
+
+.admin-booking-form .form-field {
+    min-width: 0;
+}
+
+.admin-booking-form label {
+    color: #34485d;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.admin-booking-form input,
+.admin-booking-form select {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: var(--admin-text);
+    background: #fff;
+    border: 1px solid #d5dfe8;
+    border-radius: 9px;
+    outline: none;
+    font-size: 12px;
+}
+
+.admin-booking-form input:focus,
+.admin-booking-form select:focus {
+    border-color: var(--admin-teal);
+    box-shadow: 0 0 0 3px rgba(19, 169, 151, 0.12);
+}
+
+.admin-booking-form select:disabled,
+.admin-booking-form input:disabled {
+    cursor: not-allowed;
+    background: #f0f3f6;
+}
+
+.admin-booking-form .admin-primary-button {
+    width: auto;
+    min-height: 44px;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.admin-booking-form .admin-primary-button:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+.admin-booking-form small {
+    color: var(--admin-muted);
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.create-booking-help {
+    margin: 16px 0 0;
+    padding-top: 13px;
+    color: var(--admin-muted);
+    border-top: 1px solid #e7efed;
+    font-size: 11px;
+}
+
+/* Notification states */
+
+.admin-notification.success {
+    color: #13835a;
+}
+
+.admin-notification.error {
+    padding: 10px 13px;
+    color: #a52d2d;
+    background: #fff0f0;
+    border: 1px solid #f4d0d0;
+    border-radius: 8px;
+}
+
+/* Keyboard accessibility */
+
+.admin-page button:focus-visible,
+.admin-page a:focus-visible,
+.admin-page input:focus-visible,
+.admin-page select:focus-visible {
+    outline: 3px solid rgba(19, 169, 151, 0.35);
+    outline-offset: 2px;
+}
+
+/* Responsive layout */
+
+@media (max-width: 1100px) {
+    .admin-booking-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-booking-form .admin-primary-button {
+        width: 100%;
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 560px) {
+    .admin-create-booking {
+        padding: 17px;
+    }
+
+    .create-booking-heading {
+        align-items: flex-start;
+    }
+
+    .create-booking-heading h2 {
+        font-size: 18px;
+    }
+
+    .admin-booking-form {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 15px;
+    }
+
+    .admin-booking-form .admin-primary-button {
+        grid-column: auto;
+    }
+}
+
+/* =========================================
+   ADMIN TRANSPORT SCHEDULING
+   ========================================= */
+
+.admin-booking-form input,
+.admin-booking-form select {
+    font: inherit;
+}
+
+.admin-booking-form input[type="datetime-local"] {
+    min-width: 0;
+}
+
+.admin-booking-form {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+}
+
+.admin-booking-form .form-field {
+    min-width: 0;
+}
+
+.admin-booking-form .form-field input,
+.admin-booking-form .form-field select {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: var(--admin-text);
+    background: #fff;
+    border: 1px solid #d5dfe8;
+    border-radius: 9px;
+    outline: none;
+    font-size: 12px;
+}
+
+.admin-booking-form .form-field input:focus,
+.admin-booking-form .form-field select:focus {
+    border-color: var(--admin-teal);
+    box-shadow: 0 0 0 3px rgba(19, 169, 151, .12);
+}
+
+.admin-booking-form .form-field small {
+    display: block;
+    color: var(--admin-muted);
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.admin-booking-form .form-field select:disabled,
+.admin-booking-form .form-field input:disabled {
+    cursor: not-allowed;
+    background: #f0f3f6;
+}
+
+.schedule-actions {
+    display: flex;
+    align-items: end;
+    min-width: 0;
+}
+
+.schedule-actions .admin-secondary-button {
+    width: 100%;
+    min-height: 44px;
+    white-space: normal;
+}
+
+.admin-booking-form .vehicle-selection-field {
+    grid-column: span 2;
+}
+
+.admin-booking-form .admin-primary-button {
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    white-space: normal;
+}
+
+.admin-booking-form .admin-primary-button:disabled,
+.schedule-actions .admin-secondary-button:disabled {
+    cursor: not-allowed;
+    opacity: .6;
+}
+
+.scheduled-transport-section,
+.booking-management-section {
+    margin-top: 30px;
+}
+
+.scheduled-transport-section .bookings-heading,
+.booking-management-section .bookings-heading {
+    margin-bottom: 12px;
+}
+
+.scheduled-transport-section .admin-table,
+.booking-management-section .admin-table {
+    min-width: 820px;
+}
+
+.admin-page button:disabled {
+    cursor: not-allowed;
+    opacity: .65;
+}
+
+@media (max-width: 1100px) {
+    .admin-booking-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-booking-form .vehicle-selection-field {
+        grid-column: 1 / -1;
+    }
+
+    .admin-booking-form .admin-primary-button {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 560px) {
+    .admin-booking-form {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 15px;
+    }
+
+    .admin-booking-form .vehicle-selection-field {
+        grid-column: auto;
+    }
+
+    .admin-booking-form .admin-primary-button {
+        grid-column: auto;
+    }
+
+    .schedule-actions {
+        width: 100%;
+    }
+}

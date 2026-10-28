@@ -5,6 +5,7 @@ import com.vendortransport.booking.dto.RegisterRequest;
 import com.vendortransport.booking.dto.RegisterResponse;
 import com.vendortransport.booking.dto.LoginRequest;
 import com.vendortransport.booking.dto.LoginResponse;
+
 import com.vendortransport.booking.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -23,23 +24,37 @@ public class AuthController {
         this.authService = authService;
     }
 
+    // ============================================
+    // CUSTOMER REGISTRATION
+    // POST /api/auth/register
+    // ============================================
+
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(
             @Valid @RequestBody RegisterRequest request) {
 
-        RegisterResponse response = authService.register(request);
+        RegisterResponse response =
+                authService.register(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
 
+    // ============================================
+    // CUSTOMER LOGIN
+    // POST /api/auth/login
+    // ============================================
+
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request) {
 
-        LoginResponse response = authService.login(request);
+        LoginResponse response =
+                authService.login(request);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
     }
 }

@@ -1,3 +1,4 @@
+
 package com.vendortransport.booking.dto;
 
 import jakarta.validation.constraints.Email;

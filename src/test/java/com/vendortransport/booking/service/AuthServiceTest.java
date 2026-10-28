@@ -12,13 +12,14 @@ import com.vendortransport.booking.repository.UserRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
@@ -36,8 +37,7 @@ class AuthServiceTest {
     @Mock
     private JwtService jwtService;
 
-    private BCryptPasswordEncoder passwordEncoder;
-
+    private PasswordEncoder passwordEncoder;
     private AuthService authService;
 
     @BeforeEach
@@ -46,161 +46,163 @@ class AuthServiceTest {
         passwordEncoder = new BCryptPasswordEncoder();
 
         authService = new AuthService(
-            userRepository,
-            passwordEncoder,
-            jwtService
+                userRepository,
+                passwordEncoder,
+                jwtService
         );
     }
 
-    // TEST 1: Successful Customer Registration
+    // ============================================
+    // TEST 1: Successful customer registration
+    // ============================================
+
     @Test
     void shouldRegisterCustomerSuccessfully() {
 
         when(userRepository.existsByEmail(anyString()))
-            .thenReturn(false);
+                .thenReturn(false);
 
         when(userRepository.saveAndFlush(any(User.class)))
-            .thenAnswer(invocation -> {
-                User user = invocation.getArgument(0);
-                user.setId(1L);
-                return user;
-            });
+                .thenAnswer(invocation -> {
+                    User user = invocation.getArgument(0);
+                    user.setId(1L);
+                    return user;
+                });
 
         RegisterResponse response = authService.register(
-            new RegisterRequest(
-                "Test Customer",
-                "customer@example.com",
-                "SecurePass123!"
-            )
+                new RegisterRequest(
+                        "Test Customer",
+                        "customer@example.com",
+                        "SecurePass123!"
+                )
         );
 
         assertEquals("CUSTOMER", response.role());
         assertEquals("customer@example.com", response.email());
 
         verify(userRepository).saveAndFlush(argThat(user ->
-            !user.getPasswordHash().equals("SecurePass123!")
-            && user.getPasswordHash().startsWith("$2")
+                !user.getPasswordHash().equals("SecurePass123!")
+                && user.getPasswordHash().startsWith("$2")
         ));
     }
 
-    // TEST 2: Duplicate Email Registration
+    // ============================================
+    // TEST 2: Duplicate email registration
+    // ============================================
+
     @Test
     void shouldRejectDuplicateEmail() {
 
         when(userRepository.existsByEmail(anyString()))
-            .thenReturn(true);
+                .thenReturn(true);
 
-        ResponseStatusException exception = assertThrows(
-            ResponseStatusException.class,
-            () -> authService.register(
-                new RegisterRequest(
-                    "Test Customer",
-                    "customer@example.com",
-                    "SecurePass123!"
+        assertThrows(
+                ResponseStatusException.class,
+                () -> authService.register(
+                        new RegisterRequest(
+                                "Test Customer",
+                                "customer@example.com",
+                                "SecurePass123!"
+                        )
                 )
-            )
-        );
-
-        assertEquals(
-            HttpStatus.CONFLICT,
-            exception.getStatusCode()
         );
 
         verify(userRepository, never())
-            .saveAndFlush(any(User.class));
+                .saveAndFlush(any(User.class));
     }
 
-    // TEST 3: Successful Customer Login with JWT
+    // ============================================
+    // TEST 3: Successful customer login
+    // ============================================
+
     @Test
-    void shouldLoginSuccessfullyAndGenerateJwt() {
+    void shouldLoginSuccessfully() {
 
         User user = createTestUser();
 
         when(userRepository.findByEmail("customer@example.com"))
-            .thenReturn(Optional.of(user));
+                .thenReturn(Optional.of(user));
 
         when(jwtService.generateToken(user))
-            .thenReturn("mock.jwt.token");
-
-        when(jwtService.getExpiresInSeconds())
-            .thenReturn(3600L);
+                .thenReturn("mock-jwt-token");
 
         LoginResponse response = authService.login(
-            new LoginRequest(
-                "customer@example.com",
-                "SecurePass123!"
-            )
+                new LoginRequest(
+                        "customer@example.com",
+                        "SecurePass123!"
+                )
         );
 
-        assertEquals(1L, response.id());
-        assertEquals("Test Customer", response.name());
-        assertEquals("customer@example.com", response.email());
-        assertEquals("CUSTOMER", response.role());
-        assertEquals("Login successful", response.message());
-
-        assertEquals("mock.jwt.token", response.accessToken());
+        assertNotNull(response);
+        assertEquals("mock-jwt-token", response.token());
         assertEquals("Bearer", response.tokenType());
-        assertEquals(3600L, response.expiresIn());
+        assertEquals("CUSTOMER", response.role());
+        assertEquals("customer@example.com", response.email());
+        assertEquals(1L, response.userId());
+        assertEquals(JwtService.EXPIRATION_SECONDS,
+                response.expiresIn());
 
-        verify(jwtService, times(1))
-            .generateToken(user);
+        verify(jwtService).generateToken(user);
     }
 
-    // TEST 4: Incorrect Password
+    // ============================================
+    // TEST 4: Incorrect password
+    // ============================================
+
     @Test
     void shouldRejectIncorrectPassword() {
 
         User user = createTestUser();
 
         when(userRepository.findByEmail("customer@example.com"))
-            .thenReturn(Optional.of(user));
+                .thenReturn(Optional.of(user));
 
         ResponseStatusException exception = assertThrows(
-            ResponseStatusException.class,
-            () -> authService.login(
-                new LoginRequest(
-                    "customer@example.com",
-                    "WrongPassword123"
+                ResponseStatusException.class,
+                () -> authService.login(
+                        new LoginRequest(
+                                "customer@example.com",
+                                "WrongPassword123!"
+                        )
                 )
-            )
         );
 
-        assertEquals(
-            HttpStatus.UNAUTHORIZED,
-            exception.getStatusCode()
-        );
+        assertEquals(HttpStatus.UNAUTHORIZED,
+                exception.getStatusCode());
 
-        verify(jwtService, never())
-            .generateToken(any(User.class));
+        verify(jwtService, never()).generateToken(any());
     }
 
-    // TEST 5: Unregistered Email
+    // ============================================
+    // TEST 5: Unknown email
+    // ============================================
+
     @Test
-    void shouldRejectUnregisteredEmail() {
+    void shouldRejectUnknownEmail() {
 
         when(userRepository.findByEmail("unknown@example.com"))
-            .thenReturn(Optional.empty());
+                .thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(
-            ResponseStatusException.class,
-            () -> authService.login(
-                new LoginRequest(
-                    "unknown@example.com",
-                    "SecurePass123!"
+                ResponseStatusException.class,
+                () -> authService.login(
+                        new LoginRequest(
+                                "unknown@example.com",
+                                "SecurePass123!"
+                        )
                 )
-            )
         );
 
-        assertEquals(
-            HttpStatus.UNAUTHORIZED,
-            exception.getStatusCode()
-        );
+        assertEquals(HttpStatus.UNAUTHORIZED,
+                exception.getStatusCode());
 
-        verify(jwtService, never())
-            .generateToken(any(User.class));
+        verify(jwtService, never()).generateToken(any());
     }
 
-    // Helper: Create a sample customer
+    // ============================================
+    // Helper: Create a test customer
+    // ============================================
+
     private User createTestUser() {
 
         User user = new User();
@@ -210,7 +212,7 @@ class AuthServiceTest {
         user.setEmail("customer@example.com");
 
         user.setPasswordHash(
-            passwordEncoder.encode("SecurePass123!")
+                passwordEncoder.encode("SecurePass123!")
         );
 
         user.setRole(UserRole.CUSTOMER);

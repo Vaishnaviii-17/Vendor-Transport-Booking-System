@@ -1,39 +1,74 @@
+
 package com.vendortransport.booking.entity;
 
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "vehicles")
+@Table(
+    name = "vehicles",
+    uniqueConstraints = @UniqueConstraint(
+        name = "ukpy3agdr9g5molxe2mj30p9i8i",
+        columnNames = "vehicle_number"
+    )
+)
 public class Vehicle {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "vehicle_number", nullable = false, unique = true)
-    private String vehicleNumber;
+    @Column(name = "vehicle_number", nullable = false)
+    private String registrationNumber;
 
-    @Column(nullable = false)
-    private String type;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    private VehicleType vehicleType;
 
     @Column(nullable = false)
     private Integer capacity;
 
+    @Column(nullable = false)
+    private Boolean active = true;
+
     public Vehicle() {}
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getVehicleNumber() { return vehicleNumber; }
-    public void setVehicleNumber(String vehicleNumber) {
-        this.vehicleNumber = vehicleNumber;
+    public Long getId() {
+        return id;
     }
 
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public Integer getCapacity() { return capacity; }
+    public String getRegistrationNumber() {
+        return registrationNumber;
+    }
+
+    public void setRegistrationNumber(String registrationNumber) {
+        this.registrationNumber = registrationNumber;
+    }
+
+    public VehicleType getVehicleType() {
+        return vehicleType;
+    }
+
+    public void setVehicleType(VehicleType vehicleType) {
+        this.vehicleType = vehicleType;
+    }
+
+    public Integer getCapacity() {
+        return capacity;
+    }
+
     public void setCapacity(Integer capacity) {
         this.capacity = capacity;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 }

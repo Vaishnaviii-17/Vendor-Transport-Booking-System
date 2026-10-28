@@ -36,90 +36,108 @@ public class AuthService {
         this.jwtService = jwtService;
     }
 
-    // Customer Registration
+    // ============================================
+    // CUSTOMER REGISTRATION
+    // POST /api/auth/register
+    // ============================================
+
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
 
         String name = request.name().trim();
 
-        String email = request.email().trim()
+        String email = request.email()
+                .trim()
                 .toLowerCase(Locale.ROOT);
 
+        // Check whether email already exists
         if (userRepository.existsByEmail(email)) {
             throw new ResponseStatusException(
-                HttpStatus.CONFLICT,
-                "Email is already registered"
+                    HttpStatus.CONFLICT,
+                    "Email is already registered"
             );
         }
 
+        // Create customer
         User user = new User();
+
         user.setName(name);
         user.setEmail(email);
 
+        // Securely hash password using BCrypt
         user.setPasswordHash(
-            passwordEncoder.encode(request.password())
+                passwordEncoder.encode(request.password())
         );
 
+        // Assign customer role
         user.setRole(UserRole.CUSTOMER);
 
         try {
             User savedUser = userRepository.saveAndFlush(user);
 
             return new RegisterResponse(
-                savedUser.getId(),
-                savedUser.getName(),
-                savedUser.getEmail(),
-                savedUser.getRole().name(),
-                "Customer registered successfully"
+                    savedUser.getId(),
+                    savedUser.getName(),
+                    savedUser.getEmail(),
+                    savedUser.getRole().name(),
+                    "Customer registered successfully"
             );
 
         } catch (DataIntegrityViolationException ex) {
+
             throw new ResponseStatusException(
-                HttpStatus.CONFLICT,
-                "Registration could not be completed"
+                    HttpStatus.CONFLICT,
+                    "Registration could not be completed"
             );
         }
     }
 
-    // Customer Login with JWT Generation
+    // ============================================
+    // CUSTOMER LOGIN
+    // POST /api/auth/login
+    // ============================================
+
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
 
-        String email = request.email().trim()
+        String email = request.email()
+                .trim()
                 .toLowerCase(Locale.ROOT);
 
-        // Find registered customer
+        // Find user by email
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.UNAUTHORIZED,
-                "Invalid email or password"
-            ));
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.UNAUTHORIZED,
+                                "Invalid email or password"
+                        )
+                );
 
         // Verify password against stored BCrypt hash
         boolean passwordMatches = passwordEncoder.matches(
-            request.password(),
-            user.getPasswordHash()
+                request.password(),
+                user.getPasswordHash()
         );
 
         if (!passwordMatches) {
             throw new ResponseStatusException(
-                HttpStatus.UNAUTHORIZED,
-                "Invalid email or password"
+                    HttpStatus.UNAUTHORIZED,
+                    "Invalid email or password"
             );
         }
 
-        // Generate signed JWT after successful authentication
+        // Generate signed JWT access token
         String token = jwtService.generateToken(user);
 
+        // Return token and customer information
         return new LoginResponse(
-            user.getId(),
-            user.getName(),
-            user.getEmail(),
-            user.getRole().name(),
-            "Login successful",
-            token,
-            "Bearer",
-            jwtService.getExpiresInSeconds()
+                token,
+                "Bearer",
+                JwtService.EXPIRATION_SECONDS,
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole().name()
         );
     }
 }

@@ -2,12 +2,11 @@
 package com.vendortransport.booking.dto;
 
 public record LoginResponse(
-    Long id,
+    String token,
+    String tokenType,
+    long expiresIn,
+    Long userId,
     String name,
     String email,
-    String role,
-    String message,
-    String accessToken,
-    String tokenType,
-    long expiresIn
+    String role
 ) {}
